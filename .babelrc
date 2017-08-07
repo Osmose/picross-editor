@@ -1,0 +1,17 @@
+{
+  "presets": ["react"],
+  "plugins": [
+    "transform-object-rest-spread",
+    "transform-es2015-modules-commonjs",
+    "transform-export-extensions",
+    "transform-function-bind",
+    "syntax-async-functions",
+    "transform-es2015-destructuring",
+    "transform-class-properties",
+    "transform-decorators-legacy",
+    ["import", {
+      "libraryName": "antd",
+      "style": "css"
+    }]
+  ]
+}
