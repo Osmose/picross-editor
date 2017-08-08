@@ -153,7 +153,7 @@ class FileManager extends React.Component {
   render() {
     const { rom } = this.props;
     return (
-      <Card title="File" className="file-manager">
+      <Card title="File" className="file-manager" noHovering>
         {rom &&
           <div>
             <div className="current-file">
@@ -195,7 +195,7 @@ class PuzzleSelector extends React.Component {
   render() {
     const { puzzle } = this.props;
     return (
-      <Card title="Puzzle Selector" className="puzzle-selector">
+      <Card title="Puzzle Selector" className="puzzle-selector" noHovering>
         <TreeSelect
           value={ `${puzzle}`}
           onChange={this.onChange}
@@ -271,16 +271,23 @@ class PuzzleEditor extends React.Component {
     }
 
     return (
-      <Card title="Puzzle Editor" className={className}>
-        {disabled
-          ? <Alert
-              message="Editing Disabled"
-              description="Editing this puzzle will break the game, so editing is disabled."
-              type="error"
-            />
-          : <ToolSelector tool={tool} onChange={this.handleChangeTool} />
-        }
-        <PuzzleGrid puzzle={puzzle} rom={rom} onEditCell={this.handleEditCell} />
+      <Card title="Puzzle Editor" className={className} noHovering>
+        <div className="grid-container">
+          <Card title="Preview" bordered={false} className="preview-grid" noHovering>
+            <PuzzleGrid puzzle={puzzle} rom={rom} size="small" />
+          </Card>
+          <div className="editor-grid">
+            {disabled
+              ? <Alert
+                  message="Editing Disabled"
+                  description="Editing this puzzle will break the game, so editing is disabled."
+                  type="error"
+                />
+              : <ToolSelector tool={tool} onChange={this.handleChangeTool} />
+            }
+            <PuzzleGrid puzzle={puzzle} rom={rom} size="big" onEditCell={this.handleEditCell} editable />
+          </div>
+        </div>
       </Card>
     );
   }
@@ -319,11 +326,15 @@ class PuzzleGrid extends React.Component {
   }
 
   componentWillMount() {
-    document.addEventListener('mouseup', this);
+    if (this.props.editable) {
+      document.addEventListener('mouseup', this);
+    }
   }
 
   componentWillUnmount() {
-    document.removeEventListener('mouseup', this);
+    if (this.props.editable) {
+      document.removeEventListener('mouseup', this);
+    }
   }
 
   handleEvent(event) {
@@ -335,8 +346,10 @@ class PuzzleGrid extends React.Component {
   }
 
   handleMouseDownCell(row, col) {
-    this.editing = true;
-    this.props.onEditCell(row, col);
+    if (this.props.editable) {
+      this.editing = true;
+      this.props.onEditCell(row, col);
+    }
   }
 
   handleDocumentMouseUp() {
@@ -350,21 +363,28 @@ class PuzzleGrid extends React.Component {
   }
 
   render() {
-    const { puzzle, rom } = this.props;
-    const size = rom.getDimension(puzzle);
+    const { className = "", puzzle, rom, size } = this.props;
+    const puzzleSize = rom.getDimension(puzzle);
+    let cellEventHandlers = {};
+    if (this.props.editable) {
+      cellEventHandlers = {
+        onMouseDownCell: this.handleMouseDownCell,
+        onMouseEnterCell: this.handleMouseEnterCell,
+      };
+    }
+
     return (
-      <table className="puzzle-grid">
+      <table className={`puzzle-grid ${size} ${className}`}>
         <tbody>
-          {[].concat(range(size).map(row => (
+          {[].concat(range(puzzleSize).map(row => (
             <tr key={row}>
-              {range(size).map(col => (
+              {range(puzzleSize).map(col => (
                 <Cell
                   key={col}
                   filled={rom.getFilled(puzzle, row, col)}
                   row={row}
                   col={col}
-                  onMouseDownCell={this.handleMouseDownCell}
-                  onMouseEnterCell={this.handleMouseEnterCell}
+                  {...cellEventHandlers}
                 />
               ))}
             </tr>
@@ -379,12 +399,16 @@ class PuzzleGrid extends React.Component {
 class Cell extends React.Component {
   handleMouseEnter() {
     const { row, col } = this.props;
-    this.props.onMouseEnterCell(row, col);
+    if (this.props.onMouseEnterCell) {
+      this.props.onMouseEnterCell(row, col);
+    }
   }
 
   handleMouseDown() {
     const { row, col } = this.props;
-    this.props.onMouseDownCell(row, col);
+    if (this.props.onMouseDownCell) {
+      this.props.onMouseDownCell(row, col);
+    }
   }
 
   render() {

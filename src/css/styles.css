@@ -59,10 +59,16 @@ body {
   border-collapse: collapse;
 }
 
-.puzzle-grid td {
+.puzzle-grid.small td {
   border: 1px solid #000;
-  width: 15px;
-  height: 15px;
+  width: 8px;
+  height: 8px;
+}
+
+.puzzle-grid.big td {
+  border: 2px solid #000;
+  width: 40px;
+  height: 40px;
 }
 
 .puzzle-grid td.filled {
@@ -79,4 +85,26 @@ body {
 
 .tool-selector {
   margin-bottom: 15px !important;
+}
+
+.grid-container {
+  display: flex;
+  flex-direction: row;
+}
+
+.grid-container .preview-grid {
+  flex: 0 auto;
+  margin-right: 15px;
+}
+
+.grid-container .editor-grid {
+  flex: 1;
+}
+
+.preview-grid .puzzle-grid {
+  margin: 0 auto;
+}
+
+.preview-grid .ant-card-head-title {
+  text-align: center;
 }
