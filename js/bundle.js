@@ -34200,6 +34200,8 @@ var _treeSelect = __webpack_require__(568);
 
 var _treeSelect2 = _interopRequireDefault(_treeSelect);
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _class, _class2, _class3, _class4, _class5, _class6, _class7;
 
 // CSS
@@ -34378,7 +34380,7 @@ let FileManager = (0, _autobindDecorator2.default)(_class2 = class FileManager e
 
     return _react2.default.createElement(
       _card2.default,
-      { title: 'File', className: 'file-manager' },
+      { title: 'File', className: 'file-manager', noHovering: true },
       rom && _react2.default.createElement(
         'div',
         null,
@@ -34434,7 +34436,7 @@ let PuzzleSelector = (0, _autobindDecorator2.default)(_class3 = class PuzzleSele
 
     return _react2.default.createElement(
       _card2.default,
-      { title: 'Puzzle Selector', className: 'puzzle-selector' },
+      { title: 'Puzzle Selector', className: 'puzzle-selector', noHovering: true },
       _react2.default.createElement(
         _treeSelect2.default,
         {
@@ -34519,13 +34521,26 @@ let PuzzleEditor = (0, _autobindDecorator2.default)(_class4 = class PuzzleEditor
 
     return _react2.default.createElement(
       _card2.default,
-      { title: 'Puzzle Editor', className: className },
-      disabled ? _react2.default.createElement(_alert2.default, {
-        message: 'Editing Disabled',
-        description: 'Editing this puzzle will break the game, so editing is disabled.',
-        type: 'error'
-      }) : _react2.default.createElement(ToolSelector, { tool: tool, onChange: this.handleChangeTool }),
-      _react2.default.createElement(PuzzleGrid, { puzzle: puzzle, rom: rom, onEditCell: this.handleEditCell })
+      { title: 'Puzzle Editor', className: className, noHovering: true },
+      _react2.default.createElement(
+        'div',
+        { className: 'grid-container' },
+        _react2.default.createElement(
+          _card2.default,
+          { title: 'Preview', bordered: false, className: 'preview-grid', noHovering: true },
+          _react2.default.createElement(PuzzleGrid, { puzzle: puzzle, rom: rom, size: 'small' })
+        ),
+        _react2.default.createElement(
+          'div',
+          { className: 'editor-grid' },
+          disabled ? _react2.default.createElement(_alert2.default, {
+            message: 'Editing Disabled',
+            description: 'Editing this puzzle will break the game, so editing is disabled.',
+            type: 'error'
+          }) : _react2.default.createElement(ToolSelector, { tool: tool, onChange: this.handleChangeTool }),
+          _react2.default.createElement(PuzzleGrid, { puzzle: puzzle, rom: rom, size: 'big', onEditCell: this.handleEditCell, editable: true })
+        )
+      )
     );
   }
 }) || _class4;
@@ -34567,11 +34582,15 @@ let PuzzleGrid = (0, _autobindDecorator2.default)(_class6 = class PuzzleGrid ext
   }
 
   componentWillMount() {
-    document.addEventListener('mouseup', this);
+    if (this.props.editable) {
+      document.addEventListener('mouseup', this);
+    }
   }
 
   componentWillUnmount() {
-    document.removeEventListener('mouseup', this);
+    if (this.props.editable) {
+      document.removeEventListener('mouseup', this);
+    }
   }
 
   handleEvent(event) {
@@ -34583,8 +34602,10 @@ let PuzzleGrid = (0, _autobindDecorator2.default)(_class6 = class PuzzleGrid ext
   }
 
   handleMouseDownCell(row, col) {
-    this.editing = true;
-    this.props.onEditCell(row, col);
+    if (this.props.editable) {
+      this.editing = true;
+      this.props.onEditCell(row, col);
+    }
   }
 
   handleDocumentMouseUp() {
@@ -34598,28 +34619,37 @@ let PuzzleGrid = (0, _autobindDecorator2.default)(_class6 = class PuzzleGrid ext
   }
 
   render() {
-    var _props3 = this.props;
-    const puzzle = _props3.puzzle,
-          rom = _props3.rom;
+    var _props3 = this.props,
+        _props3$className = _props3.className;
+    const className = _props3$className === undefined ? "" : _props3$className,
+          puzzle = _props3.puzzle,
+          rom = _props3.rom,
+          size = _props3.size;
 
-    const size = rom.getDimension(puzzle);
+    const puzzleSize = rom.getDimension(puzzle);
+    let cellEventHandlers = {};
+    if (this.props.editable) {
+      cellEventHandlers = {
+        onMouseDownCell: this.handleMouseDownCell,
+        onMouseEnterCell: this.handleMouseEnterCell
+      };
+    }
+
     return _react2.default.createElement(
       'table',
-      { className: 'puzzle-grid' },
+      { className: `puzzle-grid ${size} ${className}` },
       _react2.default.createElement(
         'tbody',
         null,
-        [].concat(range(size).map(row => _react2.default.createElement(
+        [].concat(range(puzzleSize).map(row => _react2.default.createElement(
           'tr',
           { key: row },
-          range(size).map(col => _react2.default.createElement(Cell, {
+          range(puzzleSize).map(col => _react2.default.createElement(Cell, _extends({
             key: col,
             filled: rom.getFilled(puzzle, row, col),
             row: row,
-            col: col,
-            onMouseDownCell: this.handleMouseDownCell,
-            onMouseEnterCell: this.handleMouseEnterCell
-          }))
+            col: col
+          }, cellEventHandlers)))
         )))
       )
     );
@@ -34632,7 +34662,9 @@ let Cell = (0, _autobindDecorator2.default)(_class7 = class Cell extends _react2
     const row = _props4.row,
           col = _props4.col;
 
-    this.props.onMouseEnterCell(row, col);
+    if (this.props.onMouseEnterCell) {
+      this.props.onMouseEnterCell(row, col);
+    }
   }
 
   handleMouseDown() {
@@ -34640,7 +34672,9 @@ let Cell = (0, _autobindDecorator2.default)(_class7 = class Cell extends _react2
     const row = _props5.row,
           col = _props5.col;
 
-    this.props.onMouseDownCell(row, col);
+    if (this.props.onMouseDownCell) {
+      this.props.onMouseDownCell(row, col);
+    }
   }
 
   render() {
