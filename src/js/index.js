@@ -6,6 +6,7 @@ import {
   LocaleProvider,
   Menu,
   Modal,
+  Select,
   TreeSelect,
   Upload,
 } from 'antd';
@@ -16,6 +17,8 @@ import autobind from 'autobind-decorator';
 
 // CSS
 import 'antd/dist/antd.css';
+import '../css/fontello.css';
+import '../css/styles.css';
 
 const TreeNode = TreeSelect.TreeNode;
 
@@ -78,9 +81,24 @@ class PicrossRom {
     this.dataView.setUint8(offset, byte);
   }
 
-  getDimension(puzzle) {
+  getWidth(puzzle) {
     const offset = 0x92b0 + (puzzle * 0x20) + 0x1E;
     return this.dataView.getUint8(offset);
+  }
+
+  getHeight(puzzle) {
+    const offset = 0x92b0 + (puzzle * 0x20) + 0x1F;
+    return this.dataView.getUint8(offset);
+  }
+
+  setWidth(puzzle, width) {
+    const offset = 0x92b0 + (puzzle * 0x20) + 0x1E;
+    return this.dataView.setUint8(offset, width);
+  }
+
+  setHeight(puzzle, height) {
+    const offset = 0x92b0 + (puzzle * 0x20) + 0x1F;
+    return this.dataView.setUint8(offset, height);
   }
 }
 
@@ -201,7 +219,7 @@ class PuzzleSelector extends React.Component {
           onChange={this.onChange}
           treeDefaultExpandAll
           dropdownStyle={{
-            'max-height': '500px',
+            maxHeight: '500px',
           }}
         >
           <TreeNode value="0" key="0" title="Demo" isLeaf />
@@ -262,9 +280,18 @@ class PuzzleEditor extends React.Component {
     }
   }
 
+  handleChangeSize(value) {
+    const { puzzle, rom } = this.props;
+    const size = Number.parseInt(value);
+    rom.setWidth(puzzle, size);
+    rom.setHeight(puzzle, size);
+    this.forceUpdate();
+  }
+
   render() {
     const { tool } = this.state;
     const { disabled, puzzle, rom } = this.props;
+    const width = rom.getWidth(puzzle);
     let className = 'puzzle-editor';
     if (disabled) {
       className += ' disabled';
@@ -273,9 +300,20 @@ class PuzzleEditor extends React.Component {
     return (
       <Card title="Puzzle Editor" className={className} noHovering>
         <div className="grid-container">
-          <Card title="Preview" bordered={false} className="preview-grid" noHovering>
-            <PuzzleGrid puzzle={puzzle} rom={rom} size="small" />
-          </Card>
+          <div className="editor-sidebar">
+            <Card title="Preview" bordered={false} className="preview-grid" noHovering>
+              <PuzzleGrid puzzle={puzzle} rom={rom} size="small" />
+            </Card>
+            {!disabled &&
+              <Card title="Size" bordered={false} className="size-selector" noHovering>
+                <Select value={`${width}`} onChange={this.handleChangeSize}>
+                  <Select.Option value="5">5x5</Select.Option>
+                  <Select.Option value="10">10x10</Select.Option>
+                  <Select.Option value="15">15x15</Select.Option>
+                </Select>
+              </Card>
+            }
+          </div>
           <div className="editor-grid">
             {disabled
               ? <Alert
@@ -364,7 +402,8 @@ class PuzzleGrid extends React.Component {
 
   render() {
     const { className = "", puzzle, rom, size } = this.props;
-    const puzzleSize = rom.getDimension(puzzle);
+    const width = rom.getWidth(puzzle);
+    const height = rom.getHeight(puzzle);
     let cellEventHandlers = {};
     if (this.props.editable) {
       cellEventHandlers = {
@@ -376,9 +415,9 @@ class PuzzleGrid extends React.Component {
     return (
       <table className={`puzzle-grid ${size} ${className}`}>
         <tbody>
-          {[].concat(range(puzzleSize).map(row => (
+          {[].concat(range(height).map(row => (
             <tr key={row}>
-              {range(puzzleSize).map(col => (
+              {range(width).map(col => (
                 <Cell
                   key={col}
                   filled={rom.getFilled(puzzle, row, col)}
