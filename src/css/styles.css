@@ -51,6 +51,10 @@ body {
   width: 100%;
 }
 
+.puzzle-editor .ant-alert {
+  margin-bottom: 15px;
+}
+
 .puzzle-grid {
   border-collapse: collapse;
 }
@@ -63,4 +67,16 @@ body {
 
 .puzzle-grid td.filled {
   background: #000;
+}
+
+.puzzle-editor.disabled .puzzle-grid td {
+  border-color: #555;
+}
+
+.puzzle-editor.disabled .puzzle-grid td.filled {
+  background: #555;
+}
+
+.tool-selector {
+  margin-bottom: 15px !important;
 }
