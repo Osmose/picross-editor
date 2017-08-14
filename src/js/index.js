@@ -1,26 +1,10 @@
-import {
-  Alert,
-  Button,
-  Card,
-  Layout,
-  LocaleProvider,
-  Menu,
-  Modal,
-  Select,
-  TreeSelect,
-  Upload,
-} from 'antd';
-import enUS from 'antd/lib/locale-provider/en_US';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import autobind from 'autobind-decorator';
 
 // CSS
-import 'antd/dist/antd.css';
 import '../css/fontello.css';
 import '../css/styles.css';
-
-const TreeNode = TreeSelect.TreeNode;
 
 const LEVEL_NAMES = [];
 for (const num of '12345678') {
@@ -34,6 +18,45 @@ class Icon extends React.Component {
     return (
       <i className={`icon-${this.props.type}`} />
     );
+  }
+}
+
+class Card extends React.Component {
+  render() {
+    const { bordered = true, children, title, className } = this.props;
+    let wrapperClassName = `card ${className}`;
+    if (bordered) {
+      wrapperClassName += ' bordered';
+    }
+
+    return (
+      <div className={wrapperClassName}>
+        {title && <div className="card-title">{title}</div>}
+        <div className="card-content">{children}</div>
+      </div>
+    );
+  }
+}
+
+class DivButton extends React.Component {
+  render() {
+    const { children, type = 'normal', ...props } = this.props;
+    return (
+      <div className={`button ${type}`} {...props}>
+        {children}
+      </div>
+    )
+  }
+}
+
+class LinkButton extends React.Component {
+  render() {
+    const { children, type = 'normal', ...props } = this.props;
+    return (
+      <a className={`button ${type}`} {...props}>
+        {children}
+      </a>
+    )
   }
 }
 
@@ -124,22 +147,20 @@ class App extends React.Component {
     const { rom, puzzle } = this.state;
 
     return (
-      <LocaleProvider locale={enUS}>
-        <Layout className="layout">
-          <Layout.Header>
-            <h1 className="site-title">Picross Editor</h1>
-          </Layout.Header>
-          <Layout.Content className="content">
-            <div className="sidebar">
-              <FileManager rom={rom} onChange={this.handleChangeRom} />
-              {rom && <PuzzleSelector puzzle={puzzle} onChange={this.handleChangePuzzle} />}
-            </div>
-            <div className="map-editor">
-              {rom && <PuzzleEditor rom={rom} puzzle={puzzle} disabled={puzzle === 0}/>}
-            </div>
-          </Layout.Content>
-        </Layout>
-      </LocaleProvider>
+      <div className="layout">
+        <header className="header">
+          <h1 className="site-title">Picross Editor</h1>
+        </header>
+        <section className="content">
+          <div className="sidebar">
+            <FileManager rom={rom} onChange={this.handleChangeRom} />
+            {rom && <PuzzleSelector puzzle={puzzle} onChange={this.handleChangePuzzle} />}
+          </div>
+          <div className="map-editor">
+            {rom && <PuzzleEditor rom={rom} puzzle={puzzle} disabled={puzzle === 0}/>}
+          </div>
+        </section>
+      </div>
     );
   }
 }
@@ -153,40 +174,25 @@ class FileManager extends React.Component {
     return false;
   }
 
-  handleClickSave() {
-    const { rom } = this.props;
-    Modal.info({
-      title: "Download ROM",
-      content: (
-        <p>
-          <a href={rom.createObjectURL()} download={rom.name}>
-            Click here to download the saved ROM
-          </a>
-        </p>
-      ),
-      iconType: null,
-    });
-  }
-
   render() {
     const { rom } = this.props;
     return (
-      <Card title="File" className="file-manager" noHovering>
+      <Card title="File" className="file-manager">
         {rom &&
           <div>
             <div className="current-file">
               <span className="label">Current File:</span>
               {rom.name}
             </div>
-            <Button type="primary" onClick={this.handleClickSave}>
+            <LinkButton type="primary" href={rom.createObjectURL()} download={rom.name}>
               <Icon type="floppy" /> Save File
-            </Button>
+            </LinkButton>
           </div>
         }
-        <Upload beforeUpload={this.handleUpload} className="upload" showUploadList={false}>
-          <Button>
+        <Upload onChange={this.handleUpload}>
+          <DivButton>
             <Icon type="folder-open-empty" /> Open a New Rom
-          </Button>
+          </DivButton>
         </Upload>
       </Card>
     )
@@ -194,56 +200,54 @@ class FileManager extends React.Component {
 }
 
 @autobind
+class Upload extends React.Component {
+  handleChange(event) {
+    const { onChange } = this.props;
+    onChange(event.target.files[0]);
+  }
+
+  render() {
+    const { children } = this.props;
+    return (
+      <label className="upload upload-label">
+        <input type="file" className="upload-input" onChange={this.handleChange} />
+        {children}
+      </label>
+    );
+  }
+}
+
+@autobind
 class PuzzleSelector extends React.Component {
-  onChange(value) {
-    let puzzle = Number.parseInt(value);
-
-    // Parent list items should select the first puzzle underneath.
-    if (puzzle === -1) {
-      puzzle = 1;
-    } else if (puzzle === -2) {
-      puzzle = 65;
-    }
-
-    if (puzzle >= 0) {
-      this.props.onChange(puzzle);
-    }
+  onChange(event) {
+    let puzzle = Number.parseInt(event.target.value);
+    this.props.onChange(puzzle);
   }
 
   render() {
     const { puzzle } = this.props;
     return (
-      <Card title="Puzzle Selector" className="puzzle-selector" noHovering>
-        <TreeSelect
+      <Card title="Puzzle Selector" className="puzzle-selector">
+        <select
           value={ `${puzzle}`}
           onChange={this.onChange}
-          treeDefaultExpandAll
-          dropdownStyle={{
-            maxHeight: '500px',
-          }}
         >
-          <TreeNode value="0" key="0" title="Demo" isLeaf />
-          <TreeNode value="-1" key="-1" title="Easy Picross">
+          <option value="0">Demo</option>
+          <optgroup label="Easy Picross">
             {LEVEL_NAMES.map((name, index)=> (
-              <TreeNode
-                value={`${index + 1}`}
-                key={`${index + 1}`}
-                title={`Easy Picross: ${name}`}
-                isLeaf
-              />
+              <option key={index} value={`${index + 1}`}>
+                Easy Picross: {name}
+              </option>
             ))}
-          </TreeNode>
-          <TreeNode value="-2" key="-2" title="Picross">
+          </optgroup>
+          <optgroup label="Picross">
             {LEVEL_NAMES.map((name, index)=> (
-              <TreeNode
-                value={`${index + 65}`}
-                key={`${index + 65}`}
-                title={`Picross: ${name}`}
-                isLeaf
-                />
+              <option key={index} value={`${index + 65}`}>
+                Picross: {name}
+              </option>
             ))}
-          </TreeNode>
-        </TreeSelect>
+          </optgroup>
+        </select>
       </Card>
     );
   }
@@ -280,9 +284,9 @@ class PuzzleEditor extends React.Component {
     }
   }
 
-  handleChangeSize(value) {
+  handleChangeSize(event) {
     const { puzzle, rom } = this.props;
-    const size = Number.parseInt(value);
+    const size = Number.parseInt(event.target.value);
     rom.setWidth(puzzle, size);
     rom.setHeight(puzzle, size);
     this.forceUpdate();
@@ -298,29 +302,27 @@ class PuzzleEditor extends React.Component {
     }
 
     return (
-      <Card title="Puzzle Editor" className={className} noHovering>
+      <Card title="Puzzle Editor" className={className}>
         <div className="grid-container">
           <div className="editor-sidebar">
-            <Card title="Preview" bordered={false} className="preview-grid" noHovering>
+            <Card title="Preview" bordered={false} className="preview-grid">
               <PuzzleGrid puzzle={puzzle} rom={rom} size="small" />
             </Card>
             {!disabled &&
-              <Card title="Size" bordered={false} className="size-selector" noHovering>
-                <Select value={`${width}`} onChange={this.handleChangeSize}>
-                  <Select.Option value="5">5x5</Select.Option>
-                  <Select.Option value="10">10x10</Select.Option>
-                  <Select.Option value="15">15x15</Select.Option>
-                </Select>
+              <Card title="Size" bordered={false} className="size-selector">
+                <select value={`${width}`} onChange={this.handleChangeSize}>
+                  <option value="5">5x5</option>
+                  <option value="10">10x10</option>
+                  <option value="15">15x15</option>
+                </select>
               </Card>
             }
           </div>
           <div className="editor-grid">
             {disabled
-              ? <Alert
-                  message="Editing Disabled"
-                  description="Editing this puzzle will break the game, so editing is disabled."
-                  type="error"
-                />
+              ? <Alert type="error" title="Editing Disabled">
+                  <p>Editing this puzzle will break the game, so editing is disabled.</p>
+                </Alert>
               : <ToolSelector tool={tool} onChange={this.handleChangeTool} />
             }
             <PuzzleGrid puzzle={puzzle} rom={rom} size="big" onEditCell={this.handleEditCell} editable />
@@ -331,27 +333,71 @@ class PuzzleEditor extends React.Component {
   }
 }
 
+class Alert extends React.Component {
+  render() {
+    const { type = 'normal', title, children } = this.props;
+    return (
+      <div className={`alert ${type}`}>
+        {title && <div className="alert-title">{title}</div>}
+        {children}
+      </div>
+    );
+  }
+}
+
 @autobind
 class ToolSelector extends React.Component {
-  handleSelect({ key }) {
-    this.props.onChange(key);
+  handleSelect(name) {
+    this.props.onChange(name);
   }
 
   render() {
     return (
       <Menu
         className="tool-selector"
-        selectedKeys={[this.props.tool]}
+        selectedName={this.props.tool}
         onSelect={this.handleSelect}
-        mode="horizontal"
       >
-        <Menu.Item key="paint">
+        <Menu.Item name="paint">
           <Icon type="pencil" /> Draw
         </Menu.Item>
-        <Menu.Item key="erase">
+        <Menu.Item name="erase">
           <Icon type="eraser" /> Erase
         </Menu.Item>
       </Menu>
+    );
+  }
+}
+
+@autobind
+class Menu extends React.Component {
+  static Item = class Item extends React.Component {
+    render() {
+      const { name, children, selectedName } = this.props;
+      let className = 'menu-item';
+      if (name === selectedName) {
+        className += ' selected';
+      }
+
+      return (
+        <li className={className} data-name={name}>{children}</li>
+      );
+    }
+  }
+
+  handleClick(event) {
+    const { onSelect } = this.props;
+    if (event.target.matches('.menu-item')) {
+      onSelect(event.target.dataset.name);
+    }
+  }
+
+  render() {
+    const { children, selectedName } = this.props;
+    return (
+      <ul className="menu" onClick={this.handleClick}>
+        {children.map(child => React.cloneElement(child, { selectedName }))}
+      </ul>
     );
   }
 }

@@ -2,11 +2,16 @@
 var path = require('path');
 var webpack = require('webpack');
 var UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 var production = process.env.NODE_ENV === 'production';
-var plugins = [];
+var plugins = [
+  new HtmlWebpackPlugin({
+    template: './src/index.html',
+  }),
+];
 if (production) {
-  plugins.concat([
+  plugins = plugins.concat([
     new webpack.DefinePlugin({
       process: {
         env: {
@@ -16,22 +21,17 @@ if (production) {
     }),
     new webpack.LoaderOptionsPlugin({
       minimize: true,
-      debug: false
+      debug: false,
     }),
-    new UglifyJSPlugin({
-      uglifyOptions: {
-        ie8: false,
-        ecma: 7,
-      },
-    }),
+    new UglifyJSPlugin(),
   ]);
 }
 
 module.exports = {
   entry: './src/js/index.js',
   output: {
-    path: path.resolve(__dirname, 'src'),
-    filename: 'js/bundle.js',
+    path: path.resolve(__dirname, 'dist'),
+    filename: production ? '[hash].js' : 'bundle.js',
   },
   devtool: 'source-map',
   plugins: plugins,
@@ -54,7 +54,12 @@ module.exports = {
       {
         test: /\.(eot|svg|ttf|woff(2)?)(\?v=\d+\.\d+\.\d+)?/,
         use: [
-          'file-loader',
+          {
+            loader: 'file-loader',
+            options: {
+              name: production ? '[hash].[ext]' : '[name].[ext]',
+            },
+          },
         ],
       },
     ],
